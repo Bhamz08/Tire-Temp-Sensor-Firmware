@@ -1,0 +1,87 @@
+# Application Kconfig. Zephyr reads this file automatically because it sits
+# next to CMakeLists.txt. Values set here show up in C as CONFIG_<NAME>.
+#
+# Every value in this menu is an UNCONFIRMED assumption (waiting on the BOM,
+# schematic and the car's CAN spec). Change them here, nowhere else.
+# Two related assumptions have to live in devicetree instead:
+#   - MLX90614 I2C address (0x5A)  -> boards/nucleo_l432kc.overlay
+#   - CAN bitrate (500 kbps)       -> boards/nucleo_l432kc.overlay
+# The CAN frame byte layout and status bits are in src/tire_frame.h.
+
+mainmenu "Tire temperature sensor"
+
+menu "Tire temp app (UNCONFIRMED assumptions)"
+
+choice APP_CORNER
+	prompt "Wheel corner this board is mounted on"
+	default APP_CORNER_UNSET
+	help
+	  One firmware image per corner. The default is "unset" on purpose:
+	  the build fails until you pick a corner, so a board can never ship
+	  with the wrong CAN ID by accident.
+
+config APP_CORNER_UNSET
+	bool "Not set (build fails)"
+
+config APP_CORNER_FL
+	bool "Front left"
+
+config APP_CORNER_FR
+	bool "Front right"
+
+config APP_CORNER_RL
+	bool "Rear left"
+
+config APP_CORNER_RR
+	bool "Rear right"
+
+endchoice
+
+# Derived value, not set by hand. -1 means "unset" and is rejected at
+# compile time in src/tire_frame.c.
+config APP_CORNER_INDEX
+	int
+	default 0 if APP_CORNER_FL
+	default 1 if APP_CORNER_FR
+	default 2 if APP_CORNER_RL
+	default 3 if APP_CORNER_RR
+	default -1
+
+config APP_CAN_BASE_ID
+	hex "CAN base ID (FL). Frame ID = base + corner index"
+	default 0x600
+	range 0x000 0x7FC
+	help
+	  UNCONFIRMED. Standard 11-bit IDs: FL=base, FR=base+1, RL=base+2,
+	  RR=base+3.
+
+config APP_OBJ_TEMP_RES_MILLI_C
+	int "Object temp resolution in the CAN frame, milli-degC per bit"
+	default 20
+	help
+	  UNCONFIRMED. 20 = 0.02 degC per bit, sent as int16 little-endian.
+
+config APP_AMBIENT_OFFSET_C
+	int "Ambient temp offset in the CAN frame, degC"
+	default 40
+	help
+	  UNCONFIRMED. Ambient is sent as uint8 = degC + this offset,
+	  so 40 means the byte covers -40..215 degC.
+
+config APP_OVERTEMP_C
+	int "Object temp above which the overtemp status bit is set, degC"
+	default 120
+	help
+	  UNCONFIRMED. Placeholder; ask the vehicle dynamics lead for the
+	  real tire limit.
+
+config APP_SAMPLE_PERIOD_MS
+	int "Time between readings / CAN frames, ms"
+	default 100
+	help
+	  UNCONFIRMED. 100 ms = 10 Hz.
+
+endmenu
+
+# Pull in all of Zephyr's own Kconfig options. Must stay at the end.
+source "Kconfig.zephyr"
