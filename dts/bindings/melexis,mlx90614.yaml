@@ -1,0 +1,10 @@
+# Devicetree binding: tells Zephyr what properties a "melexis,mlx90614" node
+# has. Zephyr has no MLX90614 driver, so this app ships its own binding and
+# talks to the sensor with raw I2C (src/mlx90614.c).
+
+description: Melexis MLX90614 infrared thermometer (SMBus/I2C)
+
+compatible: "melexis,mlx90614"
+
+# Gives the node the standard I2C device properties (reg = bus address).
+include: i2c-device.yaml
