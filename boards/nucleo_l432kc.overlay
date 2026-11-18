@@ -1,0 +1,33 @@
+/*
+ * Devicetree overlay for the nucleo_l432kc stand-in board. Zephyr picks this
+ * file up automatically because its name matches the board.
+ *
+ * A devicetree describes the hardware (which buses exist, what is wired to
+ * them). The C code asks the devicetree for these devices instead of
+ * hardcoding addresses.
+ */
+
+/ {
+	chosen {
+		/* The CAN controller the app uses (read in src/can_tx.c). */
+		zephyr,canbus = &can1;
+	};
+};
+
+&i2c1 {
+	status = "okay";
+	/* The MLX90614 speaks SMBus, which is limited to 100 kHz. */
+	clock-frequency = <100000>;
+
+	mlx90614@5a {
+		compatible = "melexis,mlx90614";
+		/* UNCONFIRMED: MLX90614 factory default address. */
+		reg = <0x5a>;
+	};
+};
+
+&can1 {
+	status = "okay";
+	/* UNCONFIRMED: 500 kbps, common FSAE default. */
+	bitrate = <500000>;
+};
